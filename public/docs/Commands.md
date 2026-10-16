@@ -33,7 +33,7 @@ The command produces the same card that is posted when a member joins: a rendere
 ### Notes
 
 - The bot must have **Attach Files** and **Send Messages** permissions in the channel.
-- If only the image is posted without the surrounding card, the installed `discord.js` version is older than `14.19.0`. See [Overview](https://havendoc.us.ci/#/doc/overview.md).
+- If only the image is posted without the surrounding card, the installed `discord.js` version is older than `14.19.0`. See [Overview](https://havendoc.us.ci/#/doc/overview.md#troubleshooting).
 - Adjusting the banner layout is done in `src/welcome/canva.js`. Adjusting the text, buttons, and links is done in `settings.json`.
 
 ---

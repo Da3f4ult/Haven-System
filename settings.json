@@ -10,5 +10,28 @@
     "rulesText": "**Read rules**",
     "verifyLabel": "Verify",
     "verifyText": "**Get Verify**"
+  },
+  "ticket": {
+    "ownerRoleId": "",
+    "logsChannelId": "",
+    "panelChannelId": "",
+    "panelImage": "public/imgs/ticket.png",
+    "closePolicy": "delete",
+    "closeDelaySeconds": 5,
+    "creatorCanClose": true,
+    "panel": {
+      "title": "Support Center",
+      "description": "Welcome to our support center. Need help? Open a private ticket and our team will assist you.",
+      "footer": ""
+    },
+    "transcript": {
+      "enabled": true,
+      "format": "html",
+      "maxMessages": 20000,
+      "embedImages": true
+    },
+    "limits": {
+      "maxOpenTicketsPerUser": 3
+    }
   }
 }

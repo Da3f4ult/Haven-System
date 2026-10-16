@@ -1,0 +1,28 @@
+{
+  "options": [
+    {
+      "id": "general_support",
+      "label": "General Support",
+      "emoji": "🎫",
+      "description": "Get help from our support team.",
+      "image": "public/imgs/ticket.png",
+      "categoryId": "REPLACE_WITH_CATEGORY_ID",
+      "staffRoleId": "REPLACE_WITH_STAFF_ROLE_ID",
+      "enabled": true,
+      "maxOpenTicketsPerUser": 1
+    },
+    {
+      "id": "technical_support",
+      "label": "Technical Support",
+      "emoji": "🛠️",
+      "description": "Get help with a technical problem.",
+      "image": "",
+      "categoryId": "REPLACE_WITH_CATEGORY_ID",
+      "staffRoleId": "REPLACE_WITH_STAFF_ROLE_ID",
+      "enabled": true,
+      "maxOpenTicketsPerUser": 1
+    }
+  ],
+  "panelMessageId": null,
+  "panelChannelId": null
+}

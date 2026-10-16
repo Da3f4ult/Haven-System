@@ -108,4 +108,4 @@ Errors are logged with the source, the affected user or command, and the underly
 
 ## Out of scope
 
-The bot is intentionally focused. It does not currently provide moderation tools, role management, leveling, music, or ticket systems. Its purpose is to greet new members with a consistent, visually branded welcome message.
+The bot is intentionally focused. It does not provide moderation tools, role management, leveling, or music. It greets new members with a branded welcome message and includes a full ticket system (see [`public/docs/Tickets.md`](public/docs/Tickets.md)).

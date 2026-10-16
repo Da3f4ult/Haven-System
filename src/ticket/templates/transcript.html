@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'nonce-{{NONCE}}'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>{{TITLE}}</title>
+<style>{{CSS}}</style>
+<style>{{AVATAR_CSS}}</style>
+</head>
+<body>
+<div class="wrap">
+{{HEADER}}
+<div class="toolbar">
+  <input id="search" type="search" placeholder="Search this transcript…" autocomplete="off" aria-label="Search messages">
+  <button id="tz-toggle" type="button">Show local time</button>
+</div>
+<main id="messages">
+{{MESSAGES}}
+</main>
+<footer class="footer">{{FOOTER}}</footer>
+<a href="#top" class="to-top" title="Back to top">↑</a>
+</div>
+<script nonce="{{NONCE}}">{{JS}}</script>
+</body>
+</html>

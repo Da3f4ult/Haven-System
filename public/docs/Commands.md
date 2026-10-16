@@ -53,3 +53,7 @@ module.exports = {
 ```
 
 Once the file is saved in `commands/`, the command becomes available as `!commandname` on the next bot restart. No registration step is required.
+
+## Ticket slash commands
+
+The ticket system uses slash commands under `/ticket` (see [Tickets.md](Tickets.md)). Register them with `npm run deploy-commands`.

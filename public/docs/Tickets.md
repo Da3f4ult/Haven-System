@@ -1,127 +1,190 @@
 # Ticket System
 
-A modular ticket system built on **Discord.js v14.19+ and Components V2**. It plugs into the existing
-bot through the normal event loader — no second client, no extra global listeners.
+Haven System includes a private support-ticket workflow built on **Discord.js 14.19+** and **Discord Components V2**. It uses the existing Discord client and event loader; no second client or separate listener process is required.
 
-## What was added
+## Features
 
-```
+- Configurable ticket categories and staff roles.
+- Private channels with controlled participant access.
+- Ticket claiming and release.
+- Optional creator-initiated closing.
+- Delete or archive close policies.
+- HTML transcripts with embedded media where possible.
+- Centralized logs and transcript delivery.
+- Live option updates without a restart.
+- Persistent ticket state across restarts.
+
+## Architecture
+
+```text
 src/
 ├── events/
-│   ├── interactionCreate.js      # single router entry (bound once by the loader)
-│   └── ticketReady.js            # startup checks + stale-state cleanup
+│   ├── interactionCreate.js      # Routes Discord interactions once
+│   └── ticketReady.js            # Startup validation and stale-state cleanup
 └── ticket/
-    ├── index.js                  # handleInteraction() / initTickets()
-    ├── component.js              # public panel (Components V2)
-    ├── channelComponent.js       # private ticket interface (Components V2)
-    ├── options.json              # live category configuration
-    ├── tickets.json              # open-ticket registry (survives restarts)
-    ├── config.js                 # settings.json reader (auto-reloads on change)
-    ├── constants.js  paths.js
-    ├── handlers/                 # buttons, select menus, modals, slash router, UI
-    ├── services/                 # optionService, ticketService, transcriptService,
-    │                             # panelService, logService, ticketStore
-    ├── transcript/               # markdown + HTML renderer
-    ├── templates/                # transcript.html / .css / .js
-    └── utils/                    # permissions, validation, media, mutex, atomic file, …
-commands/ticket/                  # one file per /ticket subcommand
-scripts/deploy-commands.js        # registers /ticket
-tests/                            # node:test suite with a fake Discord
+    ├── index.js                  # Interaction handling and initialization
+    ├── component.js              # Public ticket panel
+    ├── channelComponent.js       # Private ticket interface
+    ├── options.json              # Live ticket-category definitions
+    ├── tickets.json              # Persisted open-ticket registry
+    ├── config.js                 # settings.json reader and defaults
+    ├── constants.js / paths.js   # Shared values and filesystem paths
+    ├── handlers/                 # Buttons, menus, modals, and commands
+    ├── services/                 # Ticket, option, panel, log, and transcript services
+    ├── transcript/               # Markdown and HTML rendering
+    ├── templates/                # Transcript HTML, CSS, and JavaScript
+    └── utils/                    # Validation, permissions, media, locking, and I/O
+commands/ticket/                  # `/ticket` subcommands
+scripts/deploy-commands.js        # Registers `/ticket`
+tests/                            # Automated tests
 ```
 
-The existing prefix-command loader only reads `commands/*.js`, so `commands/ticket/` never collides with it.
+The prefix-command loader reads only direct files in `commands/`, so the `commands/ticket/` directory does not conflict with existing prefix commands.
 
 ## Setup
 
-1. `npm install` (requires discord.js ≥ 14.19).
-2. Edit `settings.json → ticket`:
+### 1. Configure `settings.json`
 
-| Key | Purpose |
-|---|---|
-| `ownerRoleId` | Role allowed to manage options / panel (the server owner always can) |
-| `logsChannelId` | Private channel for logs **and transcripts** |
-| `panelChannelId` | Channel where the panel is published |
-| `panelImage` | Panel banner (`public/...` path or https URL). Default `public/imgs/ticket.png` |
-| `closePolicy` | `delete` (default) or `archive` (locks the channel, keeps it for staff) |
-| `closeDelaySeconds` | Delay before deletion (0–60) |
-| `creatorCanClose` | Let ticket creators close their own ticket |
-| `panel.title / description / footer` | Panel text |
-| `transcript.enabled / maxMessages / embedImages` | Transcript behaviour |
-| `limits.maxOpenTicketsPerUser` | Global open-ticket limit per user |
+Set the following ticket fields:
 
-   `settings.json` is re-read automatically when it changes.
-3. Register the slash command: `npm run deploy-commands`
-   (set `GUILD_ID` in `.env` for instant per-server registration while testing; otherwise it is global).
-4. Start the bot, then in Discord:
-   - `/ticket addoption id:general_support label:"General Support" description:"Get help" category:#Tickets staff_role:@Support`
-   - `/ticket setticketpanel`
+| Setting | Purpose |
+| --- | --- |
+| `ownerRoleId` | Role allowed to manage ticket options and publish the panel. The server owner can always manage them. |
+| `logsChannelId` | Channel that receives operational logs and transcripts. |
+| `panelChannelId` | Channel where the ticket panel is published. |
+| `panelImage` | Panel banner path under `public/` or an HTTPS URL. |
+| `closePolicy` | `delete` (default) or `archive`. |
+| `closeDelaySeconds` | Delay before deletion, from 0 to 60 seconds. |
+| `creatorCanClose` | Whether ticket creators may close their own tickets. |
+| `panel.title` / `description` / `footer` | Text displayed on the public panel. |
+| `transcript.enabled` / `maxMessages` / `embedImages` | Transcript behavior. |
+| `limits.maxOpenTicketsPerUser` | Global number of open tickets allowed per user. |
 
-See `src/ticket/options.example.json` for the option schema.
+The repository’s default `settings.json` contains the full structure. The ticket configuration is re-read automatically when the file changes.
 
-## Discord requirements
+### 2. Configure Discord permissions
 
-**Intents** (already enabled by `bot.js`): Guilds, GuildMembers, GuildMessages, MessageContent.
-**Bot permissions:** View Channels, Send Messages, Read Message History, Attach Files, Embed Links,
-**Manage Channels**, **Manage Roles** (needed to set channel permission overwrites).
-The bot's role must sit above nothing special, but it must be able to see/create channels in each ticket category,
-and send + attach files in the logs and panel channels.
+The bot must have the following permissions in the relevant server and channels:
 
-## Slash commands
+- View Channels
+- Send Messages
+- Read Message History
+- Attach Files
+- Embed Links
+- Manage Channels
+- Manage Roles
 
-| Command | Who | Description |
-|---|---|---|
-| `/ticket addoption` | owner role | Add a category |
-| `/ticket editoption` | owner role | Edit only the supplied fields (`none` clears emoji/image) |
-| `/ticket removeoption` | owner role | Remove a category (open tickets keep working) |
-| `/ticket listoptions` | owner role | Paginated list of categories |
-| `/ticket setticketpanel` | owner role | Publish / refresh the panel (never duplicates) |
-| `/ticket adduser` · `removeuser` | ticket staff | Manage participants |
-| `/ticket claim [release]` | ticket staff | Claim / release |
-| `/ticket close` | staff or creator | Close with confirmation |
-| `/ticket transcript` | ticket staff | Save a transcript without closing |
+The bot must be able to create and view channels in each configured ticket category, and send messages and attachments in the panel and logs channels.
 
-## How live option updates work
+The client uses these gateway intents:
 
-`optionService` is the only code that touches `options.json`. Every change runs through one serialized queue:
-re-check the file → clone state → apply change → validate everything → **atomic write** (temp file + fsync + rename) →
-swap the in-memory state → `refreshPanel()` edits the published panel message. The panel and the ticket-creation
-handler read from the service on every interaction, so changes apply instantly with no restart. If the file is
-hand-edited into invalid JSON, the last valid configuration stays active, writes are refused (the broken file is never
-overwritten), and the problem is reported; fixing the file clears the error automatically.
+- Guilds
+- Guild Members
+- Guild Messages
+- Message Content
 
-Each ticket stores a snapshot of its category label and staff role, so editing or deleting a category never breaks
-tickets that are already open.
+Enable **Server Members Intent** and **Message Content Intent** in the Developer Portal.
 
-## Permissions model
+### 3. Register the slash command
 
-- **Owner role / guild owner**: configuration + can manage and force-close any ticket.
-- **Category staff role**: claim, add/remove users, save transcripts, close — for tickets in that category.
-- **Administrators**: can manage tickets (they already see every channel).
-- **Creator**: talks in the ticket; may close it (toggle `creatorCanClose`); no admin rights.
-- **Invited users**: send/read only.
+```bash
+npm run deploy-commands
+```
 
-Ticket channels deny `@everyone`; the owner role also gets access so configuration admins can intervene.
+Set `GUILD_ID` in `.env` for immediate registration in one test server. Leave it unset to register globally; global registration may take longer to appear.
 
-## Closing & transcripts
+### 4. Create the panel
 
-Close → confirmation → status `closing` → transcript generated → **delivered to the logs channel** → closure logged →
-channel deleted/archived. If delivery fails the channel is kept, the ticket reopens, and the user can press **Retry**.
-Owners additionally get **Close without transcript**. Repeated clicks are ignored while a close is running.
+After the bot starts, configure at least one category and publish the panel:
 
-Transcripts are standalone `.html` files: dark responsive layout, avatars, role colors, replies, edits, embeds,
-attachments (images are embedded when possible because Discord CDN links expire), a search box and UTC/local time toggle.
-All user content is HTML-escaped, and a per-file Content-Security-Policy blocks any script except the bundled one.
-Files over Discord's upload limit are first re-rendered with linked images, and only then split into `part1of N…` files —
-messages are never silently dropped (a visible notice appears if `maxMessages` is exceeded).
+```text
+/ticket addoption id:general_support label:"General Support" description:"Get help" category:#Tickets staff_role:@Support
+/ticket setticketpanel
+```
+
+The complete option schema is available in `src/ticket/options.example.json`.
+
+## Slash-command reference
+
+| Command | Permission | Description |
+| --- | --- | --- |
+| `/ticket addoption` | Owner role or server owner | Add a category to the panel. |
+| `/ticket editoption` | Owner role or server owner | Edit supplied category fields; use `none` to clear emoji or image values. |
+| `/ticket removeoption` | Owner role or server owner | Remove a category. Existing open tickets continue to work. |
+| `/ticket listoptions` | Owner role or server owner | Display configured categories in pages. |
+| `/ticket setticketpanel` | Owner role or server owner | Publish or refresh the panel without creating duplicates. |
+| `/ticket adduser` | Ticket staff | Add a participant to an open ticket. |
+| `/ticket removeuser` | Ticket staff | Remove a participant from an open ticket. |
+| `/ticket claim` / `release` | Ticket staff | Claim or release a ticket. |
+| `/ticket close` | Staff or creator | Begin the close flow with confirmation. |
+| `/ticket transcript` | Ticket staff | Save a transcript without closing the ticket. |
+
+## Permission model
+
+- **Owner role or server owner:** Manage ticket configuration and force-close any ticket.
+- **Category staff role:** Claim tickets, manage participants, save transcripts, and close tickets in that category.
+- **Administrators:** Manage tickets through their existing server permissions.
+- **Ticket creator:** Participate in the ticket and close it when `creatorCanClose` is enabled; they do not receive administrative access.
+- **Invited users:** Read and send messages in the ticket.
+
+Ticket channels deny access to `@everyone`. The configured owner role retains access so administrators can intervene when necessary.
+
+## Live configuration updates
+
+`optionService` is the single writer for `options.json`. Each update is serialized and follows this sequence:
+
+1. Re-read the current file.
+2. Clone the current state.
+3. Apply and validate the requested change.
+4. Write through a temporary file, `fsync`, and rename.
+5. Replace the in-memory state.
+6. Refresh the published panel.
+
+The ticket-creation flow and panel use the service state for every interaction, so valid changes take effect without a restart. If `options.json` contains invalid JSON, the last valid configuration remains active and the broken file is not overwritten. Fixing the file clears the error automatically.
+
+Each open ticket stores a snapshot of its category label and staff role. Editing or removing a category therefore does not break tickets that already exist.
+
+## Closing and transcripts
+
+The standard close flow is:
+
+1. A user starts the close action.
+2. The ticket requests confirmation.
+3. The ticket enters `closing` status.
+4. A transcript is generated and delivered to the logs channel.
+5. The closure is logged.
+6. The channel is deleted or archived according to `closePolicy`.
+
+If transcript delivery fails, the channel is retained, the ticket is reopened, and staff can retry. Owners also have a **Close without transcript** option. Repeated close actions are ignored while a close operation is in progress.
+
+Transcripts are standalone HTML files with:
+
+- Responsive dark layout.
+- Avatars and role colors.
+- Replies, edits, embeds, and attachments.
+- Embedded images when possible; Discord CDN links can expire.
+- Search and UTC/local time display controls.
+- HTML escaping for user content.
+- A per-file Content Security Policy.
+
+Files that exceed Discord’s upload limit are re-rendered with linked images and split into `part1ofN` files when necessary. Messages are not silently discarded; a visible notice is included when `maxMessages` is reached.
 
 ## Testing
 
-`npm test` runs 20 automated tests (permissions, concurrency, limits, XSS, transcript splitting, live panel updates,
-failed-delivery safety) against an in-memory fake Discord.
+Run the automated suite with:
 
-Manual checklist on a real server:
-1. Create category + roles, run `addoption`, `setticketpanel` → panel appears.
-2. Select a category twice rapidly → exactly one channel; non-staff cannot see it.
-3. Staff: Claim, Add User (ID), Remove User, Save Transcript → file arrives in logs.
-4. Run `editoption … enabled:false` → option disappears from the menu without restart.
-5. Close → confirm → transcript in logs, channel removed. Revoke the bot's access to the logs channel and close again → channel is kept.
+```bash
+npm test
+```
+
+The suite covers permissions, concurrency, ticket limits, XSS escaping, transcript splitting, live panel updates, and failed-delivery safety.
+
+### Manual verification checklist
+
+1. Create the required category and staff role; run `addoption` and `setticketpanel`.
+2. Select a category twice quickly and confirm that only one channel is created.
+3. Confirm non-staff users cannot view another user’s ticket.
+4. As staff, test Claim, Add User, Remove User, and Save Transcript.
+5. Run `editoption` with `enabled:false` and confirm the category disappears without a restart.
+6. Close a ticket and confirm the transcript arrives in the logs channel before deletion or archiving.
+7. Temporarily revoke log-channel access and confirm the ticket is retained when delivery fails.

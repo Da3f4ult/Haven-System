@@ -1,111 +1,95 @@
-# Features
+# Haven System
 
-An overview of what the Discord Welcome Bot does. For installation and setup, see [Overview](https://havendoc.us.ci/#/doc/overview.md).
+A Discord.js bot for branded welcome messages and private support tickets.
 
----
+Haven System combines a configurable welcome experience with a production-oriented ticket workflow. It renders personalized welcome banners, publishes interactive Components V2 messages, and provides private ticket channels with role-based access, transcripts, logging, and live configuration updates.
 
-## Automatic welcome messages
+## Documentation
 
-When a new member joins the server, the bot posts a welcome message in a configured channel. The message includes a custom-rendered banner with the member's avatar, a greeting, quick links, and a footer. No manual action is required from staff.
+- **[Installation and configuration](public/docs/overview.md)** — Set up the bot, configure Discord permissions, and run it locally.
+- **[Welcome commands](public/docs/Welcome.md)** — Use the welcome preview command and add new prefix commands.
+- **[Ticket system](public/docs/Tickets.md)** — Configure ticket categories, publish the panel, manage tickets, and understand transcripts.
 
----
+## Capabilities
 
-## Rendered welcome banner
+### Welcome experience
 
-The welcome image is generated on the fly for each new member. The member's Discord avatar is placed into a placeholder on a banner background, giving every welcome message a personalized visual without any manual editing.
+- Posts an automatic welcome message when a member joins.
+- Generates a personalized banner using the member’s Discord avatar.
+- Uses Discord Components V2 for structured, interactive welcome cards.
+- Supports configurable greeting text, footer text, button labels, and destination links.
+- Provides a preview command so staff can test changes without waiting for a new member.
 
-The banner is defined by a single background image (`public/imgs/welcome.png`), which can be replaced with any custom design.
+### Ticket management
 
----
+- Publishes a configurable support panel with ticket categories.
+- Creates private ticket channels with category-specific staff permissions.
+- Supports claiming, participant management, closing, archiving, and transcript generation.
+- Delivers logs and transcripts to a configured Discord channel.
+- Applies configuration changes without requiring a restart.
+- Preserves category snapshots for open tickets so later category edits do not disrupt active conversations.
 
-## Components V2 welcome card
+### Operational design
 
-The welcome message uses Discord's Components V2 system, producing a structured card rather than a plain embed. Each welcome card contains:
+- Loads prefix commands and Discord events automatically.
+- Uses atomic writes for ticket option updates to reduce the risk of corrupted state.
+- Keeps the last valid configuration active when a JSON file cannot be parsed.
+- Includes automated tests for permissions, concurrency, limits, transcript handling, and failure safety.
+- Uses pre-built canvas binaries, so native build tools are not required on supported platforms.
 
-- The rendered banner image
-- A heading greeting the new member by mention
-- A short message welcoming them to the server
-- A **Rules** button linking to the server rules
-- A **Verify** button linking to the verification page
-- A footer with an author credit
+## Configuration at a glance
 
-All text, labels, and links are configurable through `settings.json`.
+Runtime settings are stored in `settings.json`. Secrets belong in `.env` and must not be committed.
 
----
+| File or setting | Purpose |
+| --- | --- |
+| `.env` | Discord token and optional guild ID for command registration |
+| `settings.json` | Welcome and ticket configuration |
+| `public/imgs/welcome.png` | Welcome banner background |
+| `public/imgs/ticket.png` | Default ticket panel image |
+| `src/welcome/canva.js` | Welcome avatar placement and rendering details |
+| `src/ticket/options.json` | Ticket category definitions managed by the bot |
+| `src/ticket/tickets.json` | Persisted open-ticket registry |
 
-## Customizable message content
+See the [installation guide](public/docs/overview.md) for the complete setup procedure.
 
-Server owners can change the welcome text, button labels, button links, and footer without touching any code. Placeholders in the message — `{server}` and `{user}` — are automatically replaced with the server name and a mention of the new member.
+## Common commands
 
----
-
-## Manual preview command
-
-The bot exposes a prefix command for testing the welcome message without waiting for a new member to join:
-
+```bash
+npm install                  # Install dependencies
+npm run dev                  # Start with Node's file watcher
+npm start                    # Start normally
+npm run deploy-commands      # Register the /ticket command
+npm test                     # Run the automated test suite
 ```
+
+In Discord, the default welcome preview command is:
+
+```text
 !testwelcome
 ```
 
-Running the command renders the welcome card using the invoking user's own avatar and posts it in the current channel. This is useful when adjusting the banner layout, message text, or button configuration.
+The prefix is configurable through `settings.json`.
 
----
+## Project structure
 
-## Command framework
+```text
+.
+├── bot.js                    # Discord client entry point
+├── settings.json             # Runtime configuration
+├── commands/                 # Prefix and ticket command modules
+├── scripts/                  # Operational scripts, including command deployment
+├── public/                   # Documentation and image assets
+├── src/events/               # Discord event handlers
+├── src/welcome/              # Welcome banner and Components V2 card
+├── src/ticket/               # Ticket services, handlers, and renderers
+└── tests/                    # Automated tests
+```
 
-Commands are loaded automatically from the `commands/` directory at startup. Any `.js` file placed there with a `name` and `execute` function is registered on the bot, with no additional wiring required. The default prefix is `!` and is configurable in `settings.json`.
+## Scope
 
----
+Haven System is intentionally focused on onboarding and support workflows. It does not include moderation, role leveling, music, or general-purpose utility commands.
 
-## Event framework
+## License
 
-Discord events are loaded automatically from `src/events/`. Each file exports a `name`, an optional `once` flag, and an `execute` function. This keeps the entry point (`bot.js`) minimal and makes it straightforward to add new behavior such as logging, moderation hooks, or additional greetings.
-
----
-
-## Configuration file
-
-All runtime configuration lives in `settings.json`:
-
-| Field | Purpose |
-|-------|---------|
-| `prefix` | Prefix used for text commands |
-| `welcome.channelId` | Channel where welcome messages are posted |
-| `welcome.rulesUrl` | Destination for the Rules button |
-| `welcome.verifyUrl` | Destination for the Verify button |
-| `welcome.footer` | Text shown at the bottom of the welcome card |
-| `welcome.message` | Greeting shown above the buttons |
-| `welcome.rulesLabel` | Label for the Rules button |
-| `welcome.rulesText` | Text shown next to the Rules button |
-| `welcome.verifyLabel` | Label for the Verify button |
-| `welcome.verifyText` | Text shown next to the Verify button |
-
-Secrets such as the bot token remain in `.env` and are never mixed with user-facing configuration.
-
----
-
-## Logging
-
-The bot prints color-coded status messages to the terminal, including:
-
-- Which commands and events were loaded at startup
-- The bot's username, server count, and active prefix
-- Every prefix command that is run and whether it succeeded
-- Every member join and whether the welcome message was delivered
-
-Errors are logged with the source, the affected user or command, and the underlying exception, which makes diagnosing issues straightforward.
-
----
-
-## Reliability
-
-- Command execution is wrapped in error handling. A failure in one command does not crash the bot.
-- Global handlers for `unhandledRejection` and `uncaughtException` prevent silent crashes and log the reason.
-- The background banner and recently used avatars are cached in memory, so repeated welcome renders are fast.
-- Pre-built binaries are used for image rendering, so no native compilation step is required on any platform.
-
----
-
-## Out of scope
-
-The bot is intentionally focused. It does not provide moderation tools, role management, leveling, or music. It greets new members with a branded welcome message and includes a full ticket system (see [`public/docs/Tickets.md`](public/docs/Tickets.md)).
+This project is distributed under the MIT License. See [`LICENSE`](LICENSE) for details.

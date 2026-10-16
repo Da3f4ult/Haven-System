@@ -1,6 +1,6 @@
 # Features
 
-An overview of what the Discord Welcome Bot does. For installation and setup, see [Overview](public/docs/overview.md).
+An overview of what the Discord Welcome Bot does. For installation and setup, see [Overview](https://havendoc.us.ci/#/doc/overview.md).
 
 ---
 

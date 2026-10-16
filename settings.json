@@ -1,0 +1,14 @@
+{
+  "prefix": "!",
+  "welcome": {
+    "channelId": "1545458927863341147",
+    "rulesUrl": "https://exam.com",
+    "verifyUrl": "https://exam.com",
+    "footer": "Made By Da3f4ult",
+    "message": "### {user}\nWe're happy to have you with us. Please read the rules and verify to unlock the rest of the server.",
+    "rulesLabel": "Rules",
+    "rulesText": "**Read rules**",
+    "verifyLabel": "Verify",
+    "verifyText": "**Get Verify**"
+  }
+}
